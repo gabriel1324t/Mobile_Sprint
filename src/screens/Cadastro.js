@@ -76,6 +76,7 @@ export default function Cadastro({ navigation }) {
         <TouchableOpacity style={styles.eyeIcon} onPress={() => setUsuario({ ...usuario, showPassword: !usuario.showPassword })}>
     <Ionicons name={usuario.showPassword ? "eye" : "eye-off"} size={24} color="grey" />
   </TouchableOpacity>
+  
   </View>
         <TouchableOpacity onPress={handleCadastro} style={styles.button}>
           <Text style={styles.buttonText}>Cadastrar</Text>

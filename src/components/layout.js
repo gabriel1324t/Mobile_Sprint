@@ -17,7 +17,7 @@ export default function Layout({ children }) {
             <Icon name="person" size={30} color="black" />
         
         </View>
-        {/* Conteúdo principal */}
+        
         <View style={styles.container}>{children}</View>
       </View>
   );
