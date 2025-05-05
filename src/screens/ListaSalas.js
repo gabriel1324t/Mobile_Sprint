@@ -10,6 +10,11 @@ import {
   Image,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import Layout from "../components/layout";
 import api from "../axios/axios";
@@ -74,7 +79,7 @@ export default function ListaSalas({ route }) {
       const response = await api.getSalas();
       setSalas(response.data.sala || []);
     } catch (error) {
-      console.error("Erro ao buscar salas:", error);
+      console.log("Erro ao buscar salas:", error);
     } finally {
       setLoading(false);
     }
@@ -99,14 +104,16 @@ export default function ListaSalas({ route }) {
       const response = await api.getAllReservasPorSala(sala.id_sala);
       const reservas = response.data.reservas || [];
 
-      // Ordenar reservas por início
       reservas.sort(
         (a, b) => new Date(a.datahora_inicio) - new Date(b.datahora_inicio)
       );
 
       setReservasSala(reservas);
     } catch (error) {
-      console.error("Erro ao buscar reservas da sala:", error);
+      console.log(
+        "Erro ao buscar reservas da sala:",
+        error?.response?.data?.message || error.message
+      );
       setReservasSala([]);
     }
   }
@@ -154,102 +161,123 @@ export default function ListaSalas({ route }) {
           )}
         </View>
 
-        <Modal
-          visible={modalVisible}
-          onRequestClose={fecharModal}
-          animationType="slide"
-        >
-          <View style={styles.modalContainer}>
-            {salaSelecionada ? (
-              <>
-                <Image
-                  source={require("../../assets/senai.png")}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
+        <Modal visible={modalVisible} onRequestClose={fecharModal} animationType="slide">
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={100}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView contentContainerStyle={styles.modalContainer} keyboardShouldPersistTaps="handled">
+                {salaSelecionada ? (
+                  <>
+                    <Image
+                      source={require("../../assets/senai.png")}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
 
-                <Text style={styles.salaNumeroModal}>
-                  {salaSelecionada.numero}
-                </Text>
-
-                <View style={styles.modalContent}>
-                  <Text style={styles.sectionTitle}>Descrição:</Text>
-                  <Text style={styles.descriptionText}>
-                    {salaSelecionada.descricao}
-                  </Text>
-
-                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-                    Capacidade:
-                  </Text>
-                  <Text style={styles.descriptionText}>
-                    Máxima: {salaSelecionada.capacidade} alunos
-                  </Text>
-
-                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-                    Reservas:
-                  </Text>
-                  {reservasSala.length > 0 ? (
-                    reservasSala.map((reserva, index) => (
-                      <Text key={index} style={styles.descriptionText}>
-                        Início: {formatarData(reserva.datahora_inicio)}{"\n"}Fim: {formatarData(reserva.datahora_fim)}
-                      </Text>
-                    ))
-                  ) : (
-                    <Text style={styles.descriptionText}>Nenhuma reserva encontrada.</Text>
-                  )}
-
-                  <TouchableOpacity
-                    style={[styles.closeButton, { backgroundColor: "#B30E0A", marginTop: 20 }]}
-                    onPress={() => setMostrarForm(!mostrarForm)}
-                  >
-                    <Text style={{ color: "white" }}>
-                      {mostrarForm ? "Cancelar" : "Criar nova reserva"}
+                    <Text style={styles.salaNumeroModal}>
+                      {salaSelecionada.numero}
                     </Text>
-                  </TouchableOpacity>
 
-                  {mostrarForm && (
-                    <View style={{ marginTop: 20 }}>
-                      <Text>Data e hora de início (AAAA-MM-DD HH:MM):</Text>
-                      <TextInput
-                        value={novaReserva.datahora_inicio}
-                        onChangeText={(text) =>
-                          setNovaReserva({ ...novaReserva, datahora_inicio: text })
-                        }
-                        style={styles.input}
-                        placeholder="Ex: 2025-04-30 14:00"
-                      />
+                    <View style={styles.modalContent}>
+                      <Text style={styles.sectionTitle}>Descrição:</Text>
+                      <Text style={styles.descriptionText}>
+                        {salaSelecionada.descricao}
+                      </Text>
 
-                      <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
-                      <TextInput
-                        value={novaReserva.datahora_fim}
-                        onChangeText={(text) =>
-                          setNovaReserva({ ...novaReserva, datahora_fim: text })
-                        }
-                        style={styles.input}
-                        placeholder="Ex: 2025-04-30 15:00"
-                      />
+                      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+                        Capacidade:
+                      </Text>
+                      <Text style={styles.descriptionText}>
+                        Máxima: {salaSelecionada.capacidade} alunos
+                      </Text>
+
+                      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+                        Reservas:
+                      </Text>
+                      {reservasSala.length > 0 ? (
+                        reservasSala.map((reserva, index) => (
+                          <Text key={index} style={styles.descriptionText}>
+                            Início: {formatarData(reserva.datahora_inicio)}{"\n"}Fim:{" "}
+                            {formatarData(reserva.datahora_fim)}
+                          </Text>
+                        ))
+                      ) : (
+                        <Text style={styles.descriptionText}>
+                          Nenhuma reserva encontrada.
+                        </Text>
+                      )}
 
                       <TouchableOpacity
-                        style={[styles.closeButton, { backgroundColor: "#B30E0A" }]}
-                        onPress={criarReserva}
+                        style={[
+                          styles.closeButton,
+                          { backgroundColor: "#B30E0A", marginTop: 20 },
+                        ]}
+                        onPress={() => setMostrarForm(!mostrarForm)}
                       >
-                        <Text style={{ color: "white" }}>Salvar reserva</Text>
+                        <Text style={{ color: "white" }}>
+                          {mostrarForm ? "Cancelar" : "Criar nova reserva"}
+                        </Text>
                       </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
 
-                <TouchableOpacity
-                  style={styles.voltarButton}
-                  onPress={fecharModal}
-                >
-                  <Text style={styles.buttonText}>Voltar</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <ActivityIndicator size="large" color="blue" />
-            )}
-          </View>
+                      {mostrarForm && (
+                        <View style={{ marginTop: 20 }}>
+                          <Text>Data e hora de início (AAAA-MM-DD HH:MM):</Text>
+                          <TextInput
+                            value={novaReserva.datahora_inicio}
+                            onChangeText={(text) =>
+                              setNovaReserva({
+                                ...novaReserva,
+                                datahora_inicio: text,
+                              })
+                            }
+                            style={styles.input}
+                            placeholder="Ex: 2025-04-30 14:00"
+                          />
+
+                          <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
+                          <TextInput
+                            value={novaReserva.datahora_fim}
+                            onChangeText={(text) =>
+                              setNovaReserva({
+                                ...novaReserva,
+                                datahora_fim: text,
+                              })
+                            }
+                            style={styles.input}
+                            placeholder="Ex: 2025-04-30 15:00"
+                          />
+
+                          <TouchableOpacity
+                            style={[
+                              styles.closeButton,
+                              { backgroundColor: "#B30E0A" },
+                            ]}
+                            onPress={criarReserva}
+                          >
+                            <Text style={{ color: "white" }}>
+                              Salvar reserva
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.voltarButton}
+                      onPress={fecharModal}
+                    >
+                      <Text style={styles.buttonText}>Voltar</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <ActivityIndicator size="large" color="blue" />
+                )}
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </Modal>
       </View>
     </Layout>
@@ -317,7 +345,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   modalContainer: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
     backgroundColor: "#fff",
     alignItems: "center",
@@ -350,8 +378,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 25,
     borderRadius: 10,
-    position: "absolute",
-    bottom: 30,
+    marginTop: 10,
   },
   buttonText: {
     color: "#fff",
