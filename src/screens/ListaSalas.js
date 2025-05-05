@@ -23,6 +23,7 @@ export default function ListaSalas({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [reservasSala, setReservasSala] = useState([]);
 
   const [novaReserva, setNovaReserva] = useState({
     datahora_inicio: "",
@@ -56,11 +57,10 @@ export default function ListaSalas({ route }) {
         fk_id_sala: "",
       });
       setMostrarForm(false);
+
+      abrirModalComDescricao(salaSelecionada);
     } catch (error) {
-      console.log(
-        "Erro ao criar reserva",
-        error?.response?.data?.error || error
-      );
+      console.log("Erro ao criar reserva", error?.response?.data?.error || error);
       Alert.alert("Erro", error?.response?.data?.error || "Erro desconhecido.");
     }
   }
@@ -72,30 +72,49 @@ export default function ListaSalas({ route }) {
   async function fetchSalas() {
     try {
       const response = await api.getSalas();
-      const todasAsSalas = response.data.sala || [];
-  
-      // Filtra as salas que NÃO têm reservas
-      const salasSemReserva = todasAsSalas.filter(
-        (sala) => !sala.reservas || sala.reservas.length === 0
-      );
-  
-      setSalas(salasSemReserva);
+      setSalas(response.data.sala || []);
     } catch (error) {
       console.error("Erro ao buscar salas:", error);
     } finally {
       setLoading(false);
     }
   }
-  
 
-  function abrirModalComDescricao(sala) {
+  function formatarData(dataISO) {
+    const data = new Date(dataISO);
+    return data.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  async function abrirModalComDescricao(sala) {
     setSalaSelecionada(sala);
     setModalVisible(true);
+
+    try {
+      const response = await api.getAllReservasPorSala(sala.id_sala);
+      const reservas = response.data.reservas || [];
+
+      // Ordenar reservas por início
+      reservas.sort(
+        (a, b) => new Date(a.datahora_inicio) - new Date(b.datahora_inicio)
+      );
+
+      setReservasSala(reservas);
+    } catch (error) {
+      console.error("Erro ao buscar reservas da sala:", error);
+      setReservasSala([]);
+    }
   }
 
   function fecharModal() {
     setModalVisible(false);
     setSalaSelecionada(null);
+    setReservasSala([]);
   }
 
   return (
@@ -166,8 +185,21 @@ export default function ListaSalas({ route }) {
                     Máxima: {salaSelecionada.capacidade} alunos
                   </Text>
 
+                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+                    Reservas:
+                  </Text>
+                  {reservasSala.length > 0 ? (
+                    reservasSala.map((reserva, index) => (
+                      <Text key={index} style={styles.descriptionText}>
+                        Início: {formatarData(reserva.datahora_inicio)}{"\n"}Fim: {formatarData(reserva.datahora_fim)}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={styles.descriptionText}>Nenhuma reserva encontrada.</Text>
+                  )}
+
                   <TouchableOpacity
-                    style={[styles.closeButton, { backgroundColor: "#B30E0A" }]}
+                    style={[styles.closeButton, { backgroundColor: "#B30E0A", marginTop: 20 }]}
                     onPress={() => setMostrarForm(!mostrarForm)}
                   >
                     <Text style={{ color: "white" }}>
@@ -181,10 +213,7 @@ export default function ListaSalas({ route }) {
                       <TextInput
                         value={novaReserva.datahora_inicio}
                         onChangeText={(text) =>
-                          setNovaReserva({
-                            ...novaReserva,
-                            datahora_inicio: text,
-                          })
+                          setNovaReserva({ ...novaReserva, datahora_inicio: text })
                         }
                         style={styles.input}
                         placeholder="Ex: 2025-04-30 14:00"
@@ -199,11 +228,9 @@ export default function ListaSalas({ route }) {
                         style={styles.input}
                         placeholder="Ex: 2025-04-30 15:00"
                       />
+
                       <TouchableOpacity
-                        style={[
-                          styles.closeButton,
-                          { backgroundColor: "#B30E0A" },
-                        ]}
+                        style={[styles.closeButton, { backgroundColor: "#B30E0A" }]}
                         onPress={criarReserva}
                       >
                         <Text style={{ color: "white" }}>Salvar reserva</Text>
@@ -230,14 +257,12 @@ export default function ListaSalas({ route }) {
 }
 
 const styles = StyleSheet.create({
-  //fundo
   container: {
     flex: 1,
     paddingTop: 40,
     backgroundColor: "#fff",
     alignItems: "center",
   },
-   //buscar
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -261,7 +286,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   card: {
-    //quadrado fundo
     width: "90%",
     backgroundColor: "#D9D9D9",
     borderRadius: 20,
@@ -316,9 +340,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   descriptionText: {
-    fontSize: 20,
+    fontSize: 16,
     lineHeight: 22,
     color: "#555",
+    marginBottom: 10,
   },
   voltarButton: {
     backgroundColor: "#B30E0A",
