@@ -72,13 +72,21 @@ export default function ListaSalas({ route }) {
   async function fetchSalas() {
     try {
       const response = await api.getSalas();
-      setSalas(response.data.sala || []);
+      const todasAsSalas = response.data.sala || [];
+  
+      // Filtra as salas que NÃO têm reservas
+      const salasSemReserva = todasAsSalas.filter(
+        (sala) => !sala.reservas || sala.reservas.length === 0
+      );
+  
+      setSalas(salasSemReserva);
     } catch (error) {
       console.error("Erro ao buscar salas:", error);
     } finally {
       setLoading(false);
     }
   }
+  
 
   function abrirModalComDescricao(sala) {
     setSalaSelecionada(sala);
@@ -189,7 +197,7 @@ export default function ListaSalas({ route }) {
                           setNovaReserva({ ...novaReserva, datahora_fim: text })
                         }
                         style={styles.input}
-                        placeholder="Ex: 2025-04-30 16:00"
+                        placeholder="Ex: 2025-04-30 15:00"
                       />
                       <TouchableOpacity
                         style={[
@@ -222,12 +230,14 @@ export default function ListaSalas({ route }) {
 }
 
 const styles = StyleSheet.create({
+  //fundo
   container: {
     flex: 1,
     paddingTop: 40,
     backgroundColor: "#fff",
     alignItems: "center",
-  }, //buscar
+  },
+   //buscar
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -251,7 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   card: {
-    //fundo
+    //quadrado fundo
     width: "90%",
     backgroundColor: "#D9D9D9",
     borderRadius: 20,
