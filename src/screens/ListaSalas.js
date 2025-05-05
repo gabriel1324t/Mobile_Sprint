@@ -84,7 +84,7 @@ export default function ListaSalas({ route }) {
       setLoading(false);
     }
   }
-
+  //ajustando o formato da data
   function formatarData(dataISO) {
     const data = new Date(dataISO);
     return data.toLocaleString("pt-BR", {
@@ -104,9 +104,6 @@ export default function ListaSalas({ route }) {
       const response = await api.getAllReservasPorSala(sala.id_sala);
       const reservas = response.data.reservas || [];
 
-      reservas.sort(
-        (a, b) => new Date(a.datahora_inicio) - new Date(b.datahora_inicio)
-      );
 
       setReservasSala(reservas);
     } catch (error) {
@@ -162,12 +159,6 @@ export default function ListaSalas({ route }) {
         </View>
 
         <Modal visible={modalVisible} onRequestClose={fecharModal} animationType="slide">
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={100}
-          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <ScrollView contentContainerStyle={styles.modalContainer} keyboardShouldPersistTaps="handled">
                 {salaSelecionada ? (
                   <>
@@ -276,8 +267,7 @@ export default function ListaSalas({ route }) {
                   <ActivityIndicator size="large" color="blue" />
                 )}
               </ScrollView>
-            </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
+  
         </Modal>
       </View>
     </Layout>
