@@ -87,6 +87,7 @@ export default function ListaSalas({ route }) {
   }
   //ajustando o formato da data
   function formatarData(dataISO) {
+    //formato padronizado 
     const data = new Date(dataISO);
     return data.toLocaleString("pt-BR", {
       day: "2-digit",
@@ -119,6 +120,7 @@ export default function ListaSalas({ route }) {
   function fecharModal() {
     setModalVisible(false);
     setSalaSelecionada(null);
+    //limpa a lista de reserva da sala
     setReservasSala([]);
   }
 
@@ -143,8 +145,10 @@ export default function ListaSalas({ route }) {
             <ActivityIndicator size="large" color="blue" />
           ) : (
             <FlatList
+            //mostra todos os resultados da pesquisa, se nao mostra todas as salas
               data={resultado.length > 0 ? resultado : salas}
               keyExtractor={(item, index) => index.toString()}
+             //como cada item deve ser exibido
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.salaButton}
