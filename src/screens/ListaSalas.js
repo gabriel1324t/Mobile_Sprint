@@ -39,6 +39,7 @@ export default function ListaSalas({ route }) {
 
   const buscarSala = () => {
     const filtradas = salas.filter((sala) =>
+      //transforma o texto em minusculo
       sala.numero.toLowerCase().includes(busca.toLowerCase())
     );
     setResultado(filtradas);
