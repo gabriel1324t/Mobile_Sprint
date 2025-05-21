@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import api from "../axios/axios";
 import { Ionicons } from "@expo/vector-icons";
+import {useNavigation} from "@react-navigation/native"
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login({ navigation }) {
   const [usuario, setUsuario] = useState({
@@ -18,10 +20,15 @@ export default function Login({ navigation }) {
     showPassword: false,
   });
 
+  async function saveToken(token){
+    await SecureStore.setItemAsync("token", token);
+    console.log(token);
+  }
   async function handleLogin() {
     await api.postLogin(usuario).then(
       (response) => {
-        console.log(response.data);
+        //console.log(response.data);
+        saveToken(response.data.token)
         Alert.alert("OK", response.data.message);
         navigation.navigate("ListaSalas",{user:response.data.user});
       },

@@ -18,6 +18,9 @@ import {
 } from "react-native";
 import Layout from "../components/layout";
 import api from "../axios/axios";
+import * as SecureStore from "expo-secure-store";
+import { useNavigation } from "@react-navigation/native";
+import DateTimePicker from "../components/DateTimePicker";
 
 export default function ListaSalas({ route }) {
   const { user } = route.params;
@@ -66,7 +69,10 @@ export default function ListaSalas({ route }) {
 
       abrirModalComDescricao(salaSelecionada);
     } catch (error) {
-      console.log("Erro ao criar reserva", error?.response?.data?.error || error);
+      console.log(
+        "Erro ao criar reserva",
+        error?.response?.data?.error || error
+      );
       Alert.alert("Erro", error?.response?.data?.error || "Erro desconhecido.");
     }
   }
@@ -87,7 +93,7 @@ export default function ListaSalas({ route }) {
   }
   //ajustando o formato da data
   function formatarData(dataISO) {
-    //formato padronizado 
+    //formato padronizado
     const data = new Date(dataISO);
     return data.toLocaleString("pt-BR", {
       day: "2-digit",
@@ -105,7 +111,6 @@ export default function ListaSalas({ route }) {
     try {
       const response = await api.getAllReservasPorSala(sala.id_sala);
       const reservas = response.data.reservas || [];
-
 
       setReservasSala(reservas);
     } catch (error) {
@@ -145,10 +150,10 @@ export default function ListaSalas({ route }) {
             <ActivityIndicator size="large" color="blue" />
           ) : (
             <FlatList
-            //mostra todos os resultados da pesquisa, se nao mostra todas as salas
+              //mostra todos os resultados da pesquisa, se nao mostra todas as salas
               data={resultado.length > 0 ? resultado : salas}
               keyExtractor={(item, index) => index.toString()}
-             //como cada item deve ser exibido
+              //como cada item deve ser exibido
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.salaButton}
@@ -163,116 +168,119 @@ export default function ListaSalas({ route }) {
           )}
         </View>
 
-        <Modal visible={modalVisible} onRequestClose={fecharModal} animationType="slide">
-              <ScrollView contentContainerStyle={styles.modalContainer} keyboardShouldPersistTaps="handled">
-                {salaSelecionada ? (
-                  <>
-                    <Image
-                      source={require("../../assets/senai.png")}
-                      style={styles.logo}
-                      resizeMode="contain"
-                    />
+        <Modal
+          visible={modalVisible}
+          onRequestClose={fecharModal}
+          animationType="slide"
+        >
+          <ScrollView
+            contentContainerStyle={styles.modalContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {salaSelecionada ? (
+              <>
+                <Image
+                  source={require("../../assets/senai.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
 
-                    <Text style={styles.salaNumeroModal}>
-                      {salaSelecionada.numero}
+                <Text style={styles.salaNumeroModal}>
+                  {salaSelecionada.numero}
+                </Text>
+
+                <View style={styles.modalContent}>
+                  <Text style={styles.sectionTitle}>Descrição:</Text>
+                  <Text style={styles.descriptionText}>
+                    {salaSelecionada.descricao}
+                  </Text>
+
+                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+                    Capacidade:
+                  </Text>
+                  <Text style={styles.descriptionText}>
+                    Máxima: {salaSelecionada.capacidade} alunos
+                  </Text>
+
+                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
+                    Reservas:
+                  </Text>
+                  {reservasSala.length > 0 ? (
+                    reservasSala.map((reserva, index) => (
+                      <Text key={index} style={styles.descriptionText}>
+                        Início: {formatarData(reserva.datahora_inicio)}
+                        {"\n"}Fim: {formatarData(reserva.datahora_fim)}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={styles.descriptionText}>
+                      Nenhuma reserva encontrada.
                     </Text>
+                  )}
 
-                    <View style={styles.modalContent}>
-                      <Text style={styles.sectionTitle}>Descrição:</Text>
-                      <Text style={styles.descriptionText}>
-                        {salaSelecionada.descricao}
-                      </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.closeButton,
+                      { backgroundColor: "#B30E0A", marginTop: 20 },
+                    ]}
+                    onPress={() => setMostrarForm(!mostrarForm)}
+                  >
+                    <Text style={{ color: "white" }}>
+                      {mostrarForm ? "Cancelar" : "Criar nova reserva"}
+                    </Text>
+                  </TouchableOpacity>
 
-                      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-                        Capacidade:
-                      </Text>
-                      <Text style={styles.descriptionText}>
-                        Máxima: {salaSelecionada.capacidade} alunos
-                      </Text>
+                  {mostrarForm && (
+                    <View style={{ marginTop: 20 }}>
+                      <Text>Data e hora de início (AAAA-MM-DD HH:MM):</Text>
+                      <TextInput
+                        value={novaReserva.datahora_inicio}
+                        onChangeText={(text) =>
+                          setNovaReserva({
+                            ...novaReserva,
+                            datahora_inicio: text,
+                          })
+                        }
+                        style={styles.input}
+                        placeholder="Ex: 2025-04-30 14:00"
+                      />
 
-                      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-                        Reservas:
-                      </Text>
-                      {reservasSala.length > 0 ? (
-                        reservasSala.map((reserva, index) => (
-                          <Text key={index} style={styles.descriptionText}>
-                            Início: {formatarData(reserva.datahora_inicio)}{"\n"}Fim:{" "}
-                            {formatarData(reserva.datahora_fim)}
-                          </Text>
-                        ))
-                      ) : (
-                        <Text style={styles.descriptionText}>
-                          Nenhuma reserva encontrada.
-                        </Text>
-                      )}
+                      <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
+                      <DateTimePicker
+                        type={"datetime"}
+                        buttonTitle={
+                          evento.data_hora === ""
+                            ? "Selecione a data do evento"
+                            : evento.data_hora.toLocaleString()
+                        }
+                        setValue={setEvento}
+                        dateKey={"data_hora"}
+                      />
 
                       <TouchableOpacity
                         style={[
                           styles.closeButton,
-                          { backgroundColor: "#B30E0A", marginTop: 20 },
+                          { backgroundColor: "#B30E0A" },
                         ]}
-                        onPress={() => setMostrarForm(!mostrarForm)}
+                        onPress={criarReserva}
                       >
-                        <Text style={{ color: "white" }}>
-                          {mostrarForm ? "Cancelar" : "Criar nova reserva"}
-                        </Text>
+                        <Text style={{ color: "white" }}>Salvar reserva</Text>
                       </TouchableOpacity>
-
-                      {mostrarForm && (
-                        <View style={{ marginTop: 20 }}>
-                          <Text>Data e hora de início (AAAA-MM-DD HH:MM):</Text>
-                          <TextInput
-                            value={novaReserva.datahora_inicio}
-                            onChangeText={(text) =>
-                              setNovaReserva({
-                                ...novaReserva,
-                                datahora_inicio: text,
-                              })
-                            }
-                            style={styles.input}
-                            placeholder="Ex: 2025-04-30 14:00"
-                          />
-
-                          <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
-                          <TextInput
-                            value={novaReserva.datahora_fim}
-                            onChangeText={(text) =>
-                              setNovaReserva({
-                                ...novaReserva,
-                                datahora_fim: text,
-                              })
-                            }
-                            style={styles.input}
-                            placeholder="Ex: 2025-04-30 15:00"
-                          />
-
-                          <TouchableOpacity
-                            style={[
-                              styles.closeButton,
-                              { backgroundColor: "#B30E0A" },
-                            ]}
-                            onPress={criarReserva}
-                          >
-                            <Text style={{ color: "white" }}>
-                              Salvar reserva
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
                     </View>
+                  )}
+                </View>
 
-                    <TouchableOpacity
-                      style={styles.voltarButton}
-                      onPress={fecharModal}
-                    >
-                      <Text style={styles.buttonText}>Voltar</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <ActivityIndicator size="large" color="blue" />
-                )}
-              </ScrollView>
-  
+                <TouchableOpacity
+                  style={styles.voltarButton}
+                  onPress={fecharModal}
+                >
+                  <Text style={styles.buttonText}>Voltar</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <ActivityIndicator size="large" color="blue" />
+            )}
+          </ScrollView>
         </Modal>
       </View>
     </Layout>
