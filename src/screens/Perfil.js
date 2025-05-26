@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert, TextInput } from 'react-native';
-import Avatar from '../components/Avatar';
+import Avatar from '../components/layout';
 import api from "../axios/axios";
 import { useNavigation } from "@react-navigation/native";
+import * as SecureStore from 'expo-secure-store';
 
 export default function Perfil() {
   const navigation = useNavigation();

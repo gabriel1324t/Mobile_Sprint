@@ -34,8 +34,8 @@ export default function ListaSalas({ route }) {
   const [reservasSala, setReservasSala] = useState([]);
 
   const [novaReserva, setNovaReserva] = useState({
-    datahora_inicio: "",
-    datahora_fim: "",
+    datahora_inicio: null,
+    datahora_fim: null,
     fk_id_usuario: "",
     fk_id_sala: "",
   });
@@ -232,29 +232,42 @@ export default function ListaSalas({ route }) {
 
                   {mostrarForm && (
                     <View style={{ marginTop: 20 }}>
-                      <Text>Data e hora de início (AAAA-MM-DD HH:MM):</Text>
-                      <TextInput
-                        value={novaReserva.datahora_inicio}
-                        onChangeText={(text) =>
-                          setNovaReserva({
-                            ...novaReserva,
-                            datahora_inicio: text,
-                          })
+                      <Text>Data e hora de inicio (AAAA-MM-DD HH:MM):</Text>
+                      <DateTimePicker
+                        type="datetime"
+                        buttonTitle={
+                          novaReserva.datahora_inicio === ""
+                            ? "Selecione a data da reserva"
+                            : new Date(
+                                novaReserva.datahora_inicio
+                              ).toLocaleString()
                         }
-                        style={styles.input}
-                        placeholder="Ex: 2025-04-30 14:00"
+                        setValue={(date) =>
+                          setNovaReserva((prev) => ({
+                            ...prev,
+                            datahora_inicio: date,
+                          }))
+                        }
+                        dateKey="datahora_inicio"
                       />
 
                       <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
                       <DateTimePicker
-                        type={"datetime"}
+                        type="datetime"
                         buttonTitle={
-                          evento.data_hora === ""
-                            ? "Selecione a data do evento"
-                            : evento.data_hora.toLocaleString()
+                          novaReserva.datahora_inicio === ""
+                            ? "Selecione a data da reserva"
+                            : new Date(
+                                novaReserva.datahora_inicio
+                              ).toLocaleString()
                         }
-                        setValue={setEvento}
-                        dateKey={"data_hora"}
+                        setValue={(date) =>
+                          setNovaReserva((prev) => ({
+                            ...prev,
+                            datahora_fim: date,
+                          }))
+                        }
+                        dateKey="datahora_fim"
                       />
 
                       <TouchableOpacity
