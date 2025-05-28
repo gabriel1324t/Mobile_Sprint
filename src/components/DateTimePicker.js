@@ -1,51 +1,44 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { View, Button } from "react-native";
 import DateTimePicker from "react-native-modal-datetime-picker";
 
-const DateTimePickerDefault = ({type, buttonTitle, dateKey, setValue}) =>{
-    const [isDatePickerVisable, setDatePickerVisibility] = 
-    useState(false);
+const DateTimePickerDefault = ({ type, buttonTitle, dateKey, setValue, currentValue }) => {
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
-    const showDatePicker=()=>{
-        setDatePickerVisibility(true);
-    }
+  const showDatePicker = () => setDatePickerVisibility(true);
+  const hideDatePicker = () => setDatePickerVisibility(false);
 
-    const hideDatePicker=()=>{
-        setDatePickerVisibility(false);
-    }
+  const handleConfirm = (date) => {
+    setValue((prevState) => ({
+      ...prevState,
+      [dateKey]: date,
+    }));
+    hideDatePicker();
+  };
 
-    const handleConfirm= (date) => {
-        if(type === "time"){
-            const hour = date.getHours();
-            const minute =date.getMinutes();
-            const formattedTime = `${hour}:${minute}`;
-            setValue((prevState)=>({
-                ...prevState, //mantém o estado atual
-                [dateKey]: formattedTime
-            }))
-        } else{
-            setValue((prevState)=>({
-                ...prevState,
-                [dateKey]:date, // date: aaaa:mm:dd
-            }))
+  return (
+    <View>
+      <Button
+        title={
+          currentValue
+            ? new Date(currentValue).toLocaleString("pt-BR")
+            : buttonTitle || "Selecionar data e hora"
         }
-        hideDatePicker();
-    }
-
-    return(
-        <View>
-            <Button title={buttonTitle} onPress={showDatePicker} color="red"/>
-            <DateTimePicker
-            isVisible={isDatePickerVisable}
-            mode={type}
-            locale="pt_BR"
-            onConfirm={handleConfirm}
-            onCancel={hideDatePicker}
-            pickContainerStyleIOS={{backgoundColor:"fff"}}
-            textColor="#000"
-            />
-        </View>
-    )
-}
+        onPress={showDatePicker}
+        color="red"
+      />
+      <DateTimePicker
+        isVisible={isDatePickerVisible}
+        mode={type}
+        locale="pt_BR"
+        is24Hour={true}
+        onConfirm={handleConfirm}
+        onCancel={hideDatePicker}
+        date={currentValue ? new Date(currentValue) : new Date()}
+        textColor="#000"
+      />
+    </View>
+  );
+};
 
 export default DateTimePickerDefault;

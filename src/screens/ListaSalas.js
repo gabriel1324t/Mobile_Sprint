@@ -10,16 +10,10 @@ import {
   Image,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
 import Layout from "../components/layout";
 import api from "../axios/axios";
-import * as SecureStore from "expo-secure-store";
-import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from "../components/DateTimePicker";
 
 export default function ListaSalas({ route }) {
@@ -42,31 +36,42 @@ export default function ListaSalas({ route }) {
 
   const buscarSala = () => {
     const filtradas = salas.filter((sala) =>
-      //transforma o texto em minusculo
       sala.numero.toLowerCase().includes(busca.toLowerCase())
     );
     setResultado(filtradas);
   };
-
   async function criarReserva() {
+    if (
+      !(novaReserva.datahora_inicio instanceof Date) ||
+      !(novaReserva.datahora_fim instanceof Date) ||
+      !novaReserva.fk_id_usuario ||
+      !novaReserva.fk_id_sala
+    ) {
+      Alert.alert("Erro", "Todos os campos devem ser preenchidos corretamente.");
+      return;
+    }
+  
     try {
-      const response = await api.createReserva({
-        datahora_inicio: novaReserva.datahora_inicio,
-        datahora_fim: novaReserva.datahora_fim,
-        fk_id_usuario: user.id_usuario,
-        fk_id_sala: salaSelecionada.id_sala,
-      });
-
+      // Clona e converte as datas para strings ISO para enviar para a API
+      const reservaParaEnviar = {
+        ...novaReserva,
+        datahora_inicio: novaReserva.datahora_inicio.toISOString(),
+        datahora_fim: novaReserva.datahora_fim.toISOString(),
+      };
+  
+      const response = await api.createReserva(reservaParaEnviar);
+  
       Alert.alert("Sucesso", response.data.message);
-
+  
+      // Reseta o estado da nova reserva com datas null
       setNovaReserva({
-        datahora_inicio: "",
-        datahora_fim: "",
+        datahora_inicio: null,
+        datahora_fim: null,
         fk_id_usuario: "",
         fk_id_sala: "",
       });
       setMostrarForm(false);
-
+  
       abrirModalComDescricao(salaSelecionada);
     } catch (error) {
       console.log(
@@ -76,7 +81,7 @@ export default function ListaSalas({ route }) {
       Alert.alert("Erro", error?.response?.data?.error || "Erro desconhecido.");
     }
   }
-
+  
   useEffect(() => {
     fetchSalas();
   }, []);
@@ -91,9 +96,8 @@ export default function ListaSalas({ route }) {
       setLoading(false);
     }
   }
-  //ajustando o formato da data
+
   function formatarData(dataISO) {
-    //formato padronizado
     const data = new Date(dataISO);
     return data.toLocaleString("pt-BR", {
       day: "2-digit",
@@ -108,10 +112,15 @@ export default function ListaSalas({ route }) {
     setSalaSelecionada(sala);
     setModalVisible(true);
 
+    setNovaReserva((prev) => ({
+      ...prev,
+      fk_id_usuario: user.id_usuario,
+      fk_id_sala: sala.id_sala,
+    }));
+
     try {
       const response = await api.getAllReservasPorSala(sala.id_sala);
       const reservas = response.data.reservas || [];
-
       setReservasSala(reservas);
     } catch (error) {
       console.log(
@@ -125,7 +134,6 @@ export default function ListaSalas({ route }) {
   function fecharModal() {
     setModalVisible(false);
     setSalaSelecionada(null);
-    //limpa a lista de reserva da sala
     setReservasSala([]);
   }
 
@@ -150,10 +158,8 @@ export default function ListaSalas({ route }) {
             <ActivityIndicator size="large" color="blue" />
           ) : (
             <FlatList
-              //mostra todos os resultados da pesquisa, se nao mostra todas as salas
               data={resultado.length > 0 ? resultado : salas}
               keyExtractor={(item, index) => index.toString()}
-              //como cada item deve ser exibido
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.salaButton}
@@ -209,7 +215,8 @@ export default function ListaSalas({ route }) {
                     reservasSala.map((reserva, index) => (
                       <Text key={index} style={styles.descriptionText}>
                         Início: {formatarData(reserva.datahora_inicio)}
-                        {"\n"}Fim: {formatarData(reserva.datahora_fim)}
+                        {"\n"}
+                        Fim: {formatarData(reserva.datahora_fim)}
                       </Text>
                     ))
                   ) : (
@@ -232,42 +239,21 @@ export default function ListaSalas({ route }) {
 
                   {mostrarForm && (
                     <View style={{ marginTop: 20 }}>
-                      <Text>Data e hora de inicio (AAAA-MM-DD HH:MM):</Text>
+                      <Text>Data e hora de início:</Text>
                       <DateTimePicker
                         type="datetime"
-                        buttonTitle={
-                          novaReserva.datahora_inicio === ""
-                            ? "Selecione a data da reserva"
-                            : new Date(
-                                novaReserva.datahora_inicio
-                              ).toLocaleString()
-                        }
-                        setValue={(date) =>
-                          setNovaReserva((prev) => ({
-                            ...prev,
-                            datahora_inicio: date,
-                          }))
-                        }
+                        buttonTitle="Selecione a data de início"
+                        setValue={setNovaReserva}
                         dateKey="datahora_inicio"
+                        currentValue={novaReserva.datahora_inicio}
                       />
 
-                      <Text>Data e hora de fim (AAAA-MM-DD HH:MM):</Text>
                       <DateTimePicker
                         type="datetime"
-                        buttonTitle={
-                          novaReserva.datahora_inicio === ""
-                            ? "Selecione a data da reserva"
-                            : new Date(
-                                novaReserva.datahora_inicio
-                              ).toLocaleString()
-                        }
-                        setValue={(date) =>
-                          setNovaReserva((prev) => ({
-                            ...prev,
-                            datahora_fim: date,
-                          }))
-                        }
+                        buttonTitle="Selecione a data de fim"
+                        setValue={setNovaReserva}
                         dateKey="datahora_fim"
+                        currentValue={novaReserva.datahora_fim}
                       />
 
                       <TouchableOpacity

@@ -1,8 +1,11 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Layout({ children, navigation }) {
+export default function Layout({ children }) {
+  const navigation = useNavigation();
+
   return (
     <View style={{ flex: 1 }}>
       <Image
@@ -32,7 +35,7 @@ const styles = StyleSheet.create({
   },
   header: {
     justifyContent: "center",
-    alignItems: "flex-end", // alinhamento do botão à direita
+    alignItems: "flex-end",
     paddingHorizontal: 20,
   },
   container: {

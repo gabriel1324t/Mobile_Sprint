@@ -5,7 +5,7 @@ import Login from "./screens/Login";
 import Cadastro from './screens/Cadastro';
 import ListaSalas from './screens/ListaSalas';
 import Perfil from "./screens/Perfil";
-//import Reservas from './screens/Reservasuser'; // corrigido nome do arquivo
+import Reservas from './screens/Reservasuser'; 
 
 const Stack = createStackNavigator();
 
@@ -17,6 +17,7 @@ export default function App() {
         <Stack.Screen name="Cadastro" component={Cadastro} />
         <Stack.Screen name="ListaSalas" component={ListaSalas} />
         <Stack.Screen name="Perfil" component={Perfil} />
+        <Stack.Screen name="Reservas" component={Reservas}/>
         
       </Stack.Navigator>
     </NavigationContainer>
