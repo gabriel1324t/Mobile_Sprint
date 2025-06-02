@@ -15,6 +15,7 @@ import {
 import Layout from "../components/layout";
 import api from "../axios/axios";
 import DateTimePicker from "../components/DateTimePicker";
+import * as SecureStore from "expo-secure-store";
 
 export default function ListaSalas({ route }) {
   const { user } = route.params;
@@ -40,29 +41,30 @@ export default function ListaSalas({ route }) {
     );
     setResultado(filtradas);
   };
-  async function criarReserva() {
-    if (
-      !(novaReserva.datahora_inicio instanceof Date) ||
-      !(novaReserva.datahora_fim instanceof Date) ||
-      !novaReserva.fk_id_usuario ||
-      !novaReserva.fk_id_sala
-    ) {
-      Alert.alert("Erro", "Todos os campos devem ser preenchidos corretamente.");
-      return;
-    }
+
+  const formatDateForMySQL = (date) => {
+    return date.toISOString().replace("T", " ").replace("Z", "").split(".")[0];
+  };
   
+
+  async function criarReserva() {
     try {
       // Clona e converte as datas para strings ISO para enviar para a API
+      console.log(novaReserva);
+
+      const id_usuario = await SecureStore.getItemAsync("id_usuario");
       const reservaParaEnviar = {
-        ...novaReserva,
-        datahora_inicio: novaReserva.datahora_inicio.toISOString(),
-        datahora_fim: novaReserva.datahora_fim.toISOString(),
-      };
-  
+  ...novaReserva,
+  fk_id_usuario: id_usuario,
+  datahora_inicio: formatDateForMySQL(novaReserva.datahora_inicio),
+  datahora_fim: formatDateForMySQL(novaReserva.datahora_fim),
+};
+
+
       const response = await api.createReserva(reservaParaEnviar);
-  
+
       Alert.alert("Sucesso", response.data.message);
-  
+
       // Reseta o estado da nova reserva com datas null
       setNovaReserva({
         datahora_inicio: null,
@@ -71,7 +73,7 @@ export default function ListaSalas({ route }) {
         fk_id_sala: "",
       });
       setMostrarForm(false);
-  
+
       abrirModalComDescricao(salaSelecionada);
     } catch (error) {
       console.log(
@@ -81,7 +83,7 @@ export default function ListaSalas({ route }) {
       Alert.alert("Erro", error?.response?.data?.error || "Erro desconhecido.");
     }
   }
-  
+
   useEffect(() => {
     fetchSalas();
   }, []);

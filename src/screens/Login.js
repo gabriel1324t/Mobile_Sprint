@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import api from "../axios/axios";
 import { Ionicons } from "@expo/vector-icons";
-import {useNavigation} from "@react-navigation/native"
-import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 
 export default function Login({ navigation }) {
   const [usuario, setUsuario] = useState({
@@ -20,23 +20,26 @@ export default function Login({ navigation }) {
     showPassword: false,
   });
 
-  async function saveToken(token){
+  async function saveToken(token) {
     await SecureStore.setItemAsync("token", token);
     console.log(token);
   }
+  async function saveId(id_usuario) {
+    await SecureStore.setItemAsync("id_usuario", id_usuario);
+    console.log(id_usuario);
+  }
+
   async function handleLogin() {
-    await api.postLogin(usuario).then(
-      (response) => {
-        //console.log(response.data);
-        saveToken(response.data.token)
-        Alert.alert("OK", response.data.message);
-        navigation.navigate("ListaSalas",{user:response.data.user});
-      },
-      (error) => {
-        console.log(error.response.data);
-        Alert.alert("Erro", error.response.data.error);
-      }
-    );
+    try {
+      const response = await api.postLogin(usuario);
+      saveToken(response.data.token);
+      saveId(response.data.user.id_usuario.toString());
+      Alert.alert("OK", response.data.message);
+      navigation.navigate("ListaSalas", { user: response.data.user });
+    } catch (error) {
+      console.log(error.response.data);
+      Alert.alert("Erro", error.response.data.error);
+    }
   }
 
   return (
