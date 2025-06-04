@@ -24,7 +24,8 @@ const sheets = {
     getSalas: (sala) => api.get("salas", sala),
     createReserva: (reserva) => api.post("/reserva", reserva),
     getAllReservasPorSala: (id_sala) => api.get(`/reservas/${id_sala}`),
-    getReservaPorUsuario: (id_usuario) => api.get (`reserva/${id_usuario}`)
+    getReservaPorUsuario: (id_usuario) => api.get(`reservas/usuario/${id_usuario}`), //reserva por id
+    getUserById: (id_usuario) => api.get (`usuario/${id_usuario}`)
 }
 
 export default sheets;

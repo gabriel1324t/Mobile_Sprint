@@ -42,10 +42,7 @@ export default function ListaSalas({ route }) {
     setResultado(filtradas);
   };
 
-  const formatDateForMySQL = (date) => {
-    return date.toISOString().replace("T", " ").replace("Z", "").split(".")[0];
-  };
-  
+
 
   async function criarReserva() {
     try {
@@ -56,8 +53,8 @@ export default function ListaSalas({ route }) {
       const reservaParaEnviar = {
   ...novaReserva,
   fk_id_usuario: id_usuario,
-  datahora_inicio: formatDateForMySQL(novaReserva.datahora_inicio),
-  datahora_fim: formatDateForMySQL(novaReserva.datahora_fim),
+  //datahora_inicio: formatDateForMySQL(novaReserva.datahora_inicio),
+  //datahora_fim: formatDateForMySQL(novaReserva.datahora_fim),
 };
 
 

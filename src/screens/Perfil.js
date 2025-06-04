@@ -5,182 +5,124 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+  Image,
+  ScrollView,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import api from "../axios/axios";
 import * as SecureStore from "expo-secure-store";
 
-export default function PerfilUsuario() {
-  const [nome, setNome] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+import { useNavigation } from "@react-navigation/native";
+import api from "../axios/axios";
+
+export default function Perfil() {
+  const [userData, setUserData] = useState({
+    nome: "",
+    email: "",
+    cpf: "",
+    senha: "",
+  });
+
+  const navigation = useNavigation();
 
   useEffect(() => {
-    carregarDadosUsuario();
+    const fetchUser = async () => {
+      try {
+        const id = await SecureStore.getItemAsync("id_usuario");
+        if (!id) return;
+
+        const response = await api.getUserById(id);
+
+        setUserData((prev) => ({
+          ...prev,
+          ...response.data.user,
+        }));
+      } catch (error) {
+        console.log("Erro ao buscar usuário:", error);
+      }
+    };
+
+    fetchUser();
   }, []);
 
-  async function carregarDadosUsuario() {
-    try {
-      const userId = await SecureStore.getItemAsync("userId");
-      if (!userId) {
-        Alert.alert("Erro", "ID do usuário não encontrado.");
-        return;
-      }
-
-      const response = await api.getUsuario(userId);
-      const usuario = response.data.user;
-
-      setName(usuario.nome || "");
-      setCpf(usuario.cpf || "");
-      setEmail(usuario.email || "");
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível carregar os dados do usuário.");
-      console.log("Erro ao carregar usuário:", error);
-    }
-  }
-
-  async function handleUpdate() {
-    if (!nome || !email) {
-      Alert.alert("Atenção", "Preencha todos os campos obrigatórios.");
-      return;
-    }
-
-    try {
-      const dadosAtualizados = {
-        nome,
-        email,
-      };
-
-      // Só manda a senha se o usuário preencher o campo
-      if (senha) {
-        dadosAtualizados.senha = senha;
-      }
-
-      const id_usuario = await SecureStore.getItemAsync("id_usuario");
-      if (!id_usuario) {
-        Alert.alert("Erro", "ID do usuário não encontrado.");
-        return;
-      }
-
-      const response = await api.updateUser(id_usuario, dadosAtualizados);
-
-      Alert.alert("Sucesso", "Dados atualizados com sucesso!");
-      setPassword("");
-    } catch (error) {
-      console.log("Erro ao atualizar usuário:", error);
-      Alert.alert("Erro", "Não foi possível atualizar os dados.");
-    }
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>MEU PERFIL</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Image source={require("../../assets/senai.png")} style={styles.logo} />
+      <View style={styles.avatar} />
+      <TextInput
+        style={styles.input}
+        value={userData.nome}
+        editable={false}
+        placeholder="Nome"
+      />
+      <TextInput
+        style={styles.input}
+        value={userData.email}
+        editable={false}
+        placeholder="Email"
+      />
+      <TextInput
+        style={styles.input}
+        value={userData.cpf}
+        editable={false}
+        placeholder="CPF"
+      />
+      <TextInput
+        style={styles.input}
+        value={userData.senha}
+        editable={false}
+        placeholder="Senha"
+        secureTextEntry
+      />
 
-      <View style={styles.avatarContainer}>
-        <Icon name="person" size={80} color="#f88" />
-      </View>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Modificar</Text>
+      </TouchableOpacity>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Nome:</Text>
-        <TextInput
-          style={styles.input}
-          value={nome}
-          onChangeText={setNome}
-          editable={true}
-        />
-
-        <Text style={styles.label}>CPF:</Text>
-        <TextInput
-          style={styles.input}
-          value={cpf}
-          editable={false}
-        />
-
-        <Text style={styles.label}>Email:</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          editable={true}
-          keyboardType="email-address"
-        />
-
-        <Text style={styles.label}>Senha:</Text>
-        <TextInput
-          style={styles.input}
-          value={senha}
-          onChangeText={setSenha}
-          editable={true}
-          placeholder="Digite sua nova senha"
-          secureTextEntry
-        />
-
-        <TouchableOpacity style={styles.botaoSalvar} onPress={handleUpdate}>
-          <Text style={styles.botaoTexto}>Atualizar Dados</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("Reservas")}
+      >
+        <Text style={styles.buttonText}>Minhas Reservas</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    padding: 24,
     alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+    flexGrow: 1,
   },
   logo: {
-    width: 120,
-    height: 40,
-    resizeMode: "contain",
-    marginBottom: 16,
+    width: 150,
+    height: 50,
+    marginBottom: 30,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#e0e0e0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#ddd",
+    marginBottom: 30,
   },
   input: {
-    width: "100%",
-    height: 44,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  label: {
-    alignSelf: "flex-start",
-    fontWeight: "600",
-    marginBottom: 4,
-    color: "#555",
+    width: "90%",
+    padding: 12,
+    marginVertical: 10,
+    backgroundColor: "#ddd",
+    borderRadius: 10,
   },
   button: {
-    width: "100%",
-    height: 44,
-    backgroundColor: "#b30000",
-    borderRadius: 8,
-    justifyContent: "center",
+    backgroundColor: "#b20000",
+    padding: 15,
+    borderRadius: 10,
+    marginVertical: 10,
+    width: "70%",
     alignItems: "center",
-    marginVertical: 8,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  iconButton: {
-    position: "absolute",
-    top: 24,
-    right: 24,
+    fontWeight: "bold",
   },
 });
