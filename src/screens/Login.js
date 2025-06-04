@@ -32,8 +32,28 @@ export default function Login({ navigation }) {
   async function handleLogin() {
     try {
       const response = await api.postLogin(usuario);
-      saveToken(response.data.token);
-      saveId(response.data.user.id_usuario.toString());
+
+      console.log("Login aqui!!!");
+
+      // if (!response.data.token) {
+      //   Alert.alert("Erro", "Token não recebido. Verifique suas credenciais.");
+      //   return;
+      // }
+
+      // // if (userId === undefined || userId === null) {
+      // //   console.warn("ID do usuário não encontrado na resposta.");
+      // // }
+
+      await saveToken(response.data.token);
+      await saveId(response.data.user.id_usuario.toString());
+
+      console.log("TOKEN GERADO:", response.data.token);
+      console.log("ID DO USUÁRIO:", response.data.user.id_usuario);
+
+    
+      // if (userId !== undefined && userId !== null) {
+      //   await saveUserId(userId);
+      // }
       Alert.alert("OK", response.data.message);
       navigation.navigate("ListaSalas", { user: response.data.user });
     } catch (error) {

@@ -2,147 +2,182 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
+  FlatList,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
   StyleSheet,
-  ScrollView,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import * as SecureStore from "expo-secure-store";
-import Layout from "../components/layout";
-import api from "../axios/axios"; // usa o axios já configurado
 
-export default function ReservaFormScreen() {
-  const [salas, setSalas] = useState([]);
-  const [salaSelecionada, setSalaSelecionada] = useState(null);
-  const [dataInicio, setDataInicio] = useState(new Date());
-  const [dataFim, setDataFim] = useState(new Date());
+import * as SecureStore from "expo-secure-store";
+import { useNavigation } from "@react-navigation/native";
+import api from "../axios/axios"; // ajuste o caminho se necessário
+
+export default function MinhasReservas() {
+  const navigation = useNavigation();
+  const [reservas, setReservas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [idUsuario, setIdUsuario] = useState(null);
+
+  // useEffect(() => {
+  //   async function buscarIdUsuario() {
+  //     const id = await AsyncStorage.getItem('id_usuario');
+  //     if (!id) {
+  //       Alert.alert('Erro', 'Usuário não identificado. Faça login novamente.');
+  //       navigation.navigate('Login');
+  //       return;
+  //     }
+  //     setIdUsuario(id);
+  //   }
+
+  //   buscarIdUsuario();
+  // }, []);
 
   useEffect(() => {
-    const fetchSalaId = async () => {
-      try {
-        const id = await SecureStore.getItemAsync("id_usuario");
-        if (!id) return;
-
-        const response = await api.getAllReservaPorUsuario(id);
-
-        setUserData((prev) => ({
-          ...prev,
-          ...response.data.user,
-        }));
-      } catch (error) {
-        console.log("Erro ao buscar usuário:", error);
-      }
-    };
-
-    fetchSalaId();
-  }, []);
-
- 
-  const handleReserva = async () => {
-    try {
-      const fk_id_usuario = await SecureStore.getItemAsync("id_usuario");
-
-      // Checa disponibilidade
-      const disponibilidade = await api.post("/getHorariosReservados", {
-        fk_id_sala: salaSelecionada,
-        datahora_inicio: dataInicio,
-        datahora_fim: dataFim,
-      });
-
-      if (!disponibilidade.data.available) {
-        return Alert.alert(
-          "Erro",
-          "Essa sala já está reservada nesse horário."
-        );
-      }
-
-      // Cria reserva
-      await api.post("/createReservas", {
-        fk_id_usuario,
-        fk_id_sala: salaSelecionada,
-        datahora_inicio: dataInicio,
-        datahora_fim: dataFim,
-      });
-
-      Alert.alert("Sucesso", "Reserva feita com sucesso!");
-    } catch (error) {
-      console.error("Erro ao reservar:", error);
-      Alert.alert("Erro", "Ocorreu um erro ao fazer a reserva.");
+    buscarIdUsuario();
+    if (idUsuario) {
+      carregarReservas;
     }
+  }, [idUsuario]);
+
+  async function buscarIdUsuario() {
+    const id = await SecureStore.getItemAsync("id_usuario");
+
+    console.log("ID identificado: ", id);
+    if (!id) {
+      Alert.alert("Erro", "Usuário não identificado. Faça login novamente.");
+      navigation.navigate("Login");
+      return;
+    }
+    setIdUsuario(id);
+  }
+
+  //----------------------------PARAMOS AQUI---------------- 04/06
+
+  // const carregarReservas = async () => {
+  // setLoading(true);
+  async function carregarReservas() {
+    try {
+      const response = await api.getReservasPorUsuario(idUsuario);
+      setReservas(response.data.reservas);
+    } catch (error) {
+      console.log("Erro ao buscar reservas:", error.response.data.error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const excluirReserva = async (idReserva) => {
+    Alert.alert(
+      "Confirmar exclusão",
+      "Tem certeza que deseja excluir esta reserva?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Excluir",
+          onPress: async () => {
+            try {
+              await api.deleteReserva(idReserva);
+              setReservas((prev) =>
+                prev.filter((reserva) => reserva.id_reserva !== idReserva)
+              );
+              Alert.alert("Sucesso", "Reserva excluída com sucesso!");
+            } catch (error) {
+              console.log("Erro ao excluir reserva:", error);
+              Alert.alert("Erro", "Não foi possível excluir a reserva.");
+            }
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
+  const formatarDataHora = (inicio, fim) => {
+    const [dataInicio, horaInicio] = inicio.split("T");
+    const [dataFim, horaFim] = fim.split("T");
+    const dataFormatada = dataInicio.split("-").reverse().join("/");
+    const horaInicioFormatada = horaInicio.slice(0, 5);
+    const horaFimFormatada = horaFim.slice(0, 5);
+    return `${dataFormatada} - ${horaInicioFormatada} até ${horaFimFormatada}`;
   };
 
   return (
-    <Layout>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.label}>Selecione a sala:</Text>
-        {salas.map((sala) => (
-          <TouchableOpacity
-            key={sala.id_sala}
-            style={[
-              styles.salaButton,
-              salaSelecionada === sala.id_sala && styles.salaSelecionada,
-            ]}
-            onPress={() => setSalaSelecionada(sala.id_sala)}
-          >
-            <Text>{sala.nome}</Text>
-          </TouchableOpacity>
-        ))}
+    <View style={styles.container}>
+      <Text style={styles.titulo}>Minhas Reservas</Text>
 
-        <Text style={styles.label}>Data e hora de início:</Text>
-        <DateTimePicker
-          value={dataInicio}
-          mode="datetime"
-          onChange={(event, selectedDate) =>
-            selectedDate && setDataInicio(selectedDate)
-          }
+      {loading ? (
+        <ActivityIndicator size="large" color="#b71c1c" />
+      ) : reservas.length > 0 ? (
+        <FlatList
+          data={reservas}
+          keyExtractor={(item) => item.id_reserva.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.sala}>Sala: {item.fk_id_sala}</Text>
+              <Text style={styles.data}>
+                {formatarDataHora(item.datahora_inicio, item.datahora_fim)}
+              </Text>
+              <TouchableOpacity
+                style={styles.botaoExcluir}
+                onPress={() => excluirReserva(item.id_reserva)}
+              >
+                <Text style={styles.textoExcluir}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         />
-
-        <Text style={styles.label}>Data e hora de fim:</Text>
-        <DateTimePicker
-          value={dataFim}
-          mode="datetime"
-          onChange={(event, selectedDate) =>
-            selectedDate && setDataFim(selectedDate)
-          }
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleReserva}>
-          <Text style={styles.buttonText}>Reservar</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </Layout>
+      ) : (
+        <Text style={styles.semReserva}>Nenhuma reserva encontrada.</Text>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#fff",
   },
-  label: {
+  titulo: {
+    fontSize: 22,
     fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
+    color: "#b71c1c",
+    marginBottom: 16,
+    textAlign: "center",
   },
-  salaButton: {
-    padding: 10,
-    backgroundColor: "#eee",
-    marginVertical: 5,
-    borderRadius: 8,
-  },
-  salaSelecionada: {
-    backgroundColor: "#b20000",
-    color: "#fff",
-  },
-  button: {
-    backgroundColor: "#b20000",
-    padding: 15,
+  card: {
+    backgroundColor: "#f2f2f2",
     borderRadius: 10,
-    marginTop: 30,
-    alignItems: "center",
+    padding: 12,
+    marginBottom: 12,
   },
-  buttonText: {
-    color: "#fff",
+  sala: {
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  data: {
+    color: "#555",
+    marginVertical: 4,
+  },
+  botaoExcluir: {
+    marginTop: 8,
+    backgroundColor: "#b71c1c",
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  textoExcluir: {
+    color: "#fff",
+    textAlign: "center",
+  },
+  semReserva: {
+    textAlign: "center",
+    color: "#888",
+    fontSize: 16,
+    marginTop: 20,
   },
 });

@@ -1,128 +1,153 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  ScrollView,
-} from "react-native";
-import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from '@react-navigation/native';
+import api from '../axios/axios';
 
-import { useNavigation } from "@react-navigation/native";
-import api from "../axios/axios";
-
-export default function Perfil() {
-  const [userData, setUserData] = useState({
-    nome: "",
-    email: "",
-    cpf: "",
-    senha: "",
+export default function PerfilScreen() {
+  const [usuario, setUsuario] = useState({
+    nome: '',
+    email: '',
+    cpf: '',
+    senha: '',
   });
 
   const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    async function carregarUsuario() {
+      const id = await SecureStore.getItemAsync('id_usuario');
+      if (!id) return;
+
       try {
-        const id = await SecureStore.getItemAsync("id_usuario");
-        if (!id) return;
-
         const response = await api.getUserById(id);
+        const userData = response.data.user;
 
-        setUserData((prev) => ({
-          ...prev,
-          ...response.data.user,
-        }));
+        setUsuario({
+          nome: userData.nome || '',
+          email: userData.email || '',
+          cpf: userData.cpf || '',
+          senha: '******', // senha oculta
+        });
       } catch (error) {
-        console.log("Erro ao buscar usuário:", error);
+        console.error('Erro ao buscar usuário:', error);
       }
-    };
+    }
 
-    fetchUser();
+    carregarUsuario();
   }, []);
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Image source={require("../../assets/senai.png")} style={styles.logo} />
-      <View style={styles.avatar} />
-      <TextInput
-        style={styles.input}
-        value={userData.nome}
-        editable={false}
-        placeholder="Nome"
-      />
-      <TextInput
-        style={styles.input}
-        value={userData.email}
-        editable={false}
-        placeholder="Email"
-      />
-      <TextInput
-        style={styles.input}
-        value={userData.cpf}
-        editable={false}
-        placeholder="CPF"
-      />
-      <TextInput
-        style={styles.input}
-        value={userData.senha}
-        editable={false}
-        placeholder="Senha"
-        secureTextEntry
-      />
+  const handleDeleteAccount = async () => {
+    const id = await SecureStore.getItemAsync('id_usuario');
+    if (!id) return;
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Modificar</Text>
-      </TouchableOpacity>
+    Alert.alert(
+      'Excluir Conta',
+      'Tem certeza que deseja excluir sua conta? Essa ação é irreversível.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.deleteUser(id);
+
+              await SecureStore.deleteItemAsync('id_usuario');
+              await SecureStore.deleteItemAsync('authenticated');
+
+              Alert.alert('Conta excluída com sucesso.');
+              navigation.navigate('Login');
+            } catch (error) {
+              console.error('Erro ao excluir conta:', error);
+              Alert.alert('Erro ao excluir conta. Tente novamente.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Perfil</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Nome"
+        value={usuario.nome}
+        editable={false}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={usuario.email}
+        editable={false}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="CPF"
+        value={usuario.cpf}
+        editable={false}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Senha"
+        value={usuario.senha}
+        secureTextEntry
+        editable={false}
+      />
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Reservas")}
+        onPress={() => navigation.navigate('Reservas')}
       >
         <Text style={styles.buttonText}>Minhas Reservas</Text>
       </TouchableOpacity>
-    </ScrollView>
+
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: '#8c0000' }]}
+        onPress={handleDeleteAccount}
+      >
+        <Text style={styles.buttonText}>Excluir Conta</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: '#fff',
     padding: 20,
-    backgroundColor: "#fff",
-    flexGrow: 1,
+    justifyContent: 'center',
   },
-  logo: {
-    width: 150,
-    height: 50,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
     marginBottom: 30,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#ddd",
-    marginBottom: 30,
+    textAlign: 'center',
+    color: '#b71c1c',
   },
   input: {
-    width: "90%",
-    padding: 12,
-    marginVertical: 10,
-    backgroundColor: "#ddd",
+    backgroundColor: '#D9D9D9',
     borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
   },
   button: {
-    backgroundColor: "#b20000",
+    backgroundColor: '#b20000',
     padding: 15,
     borderRadius: 10,
-    marginVertical: 10,
-    width: "70%",
-    alignItems: "center",
+    marginTop: 15,
+    alignItems: 'center',
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: '#fff',
+    fontSize: 16,
   },
 });
