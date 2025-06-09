@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';
 import api from '../axios/axios';
+import { Logout } from '@mui/icons-material/Logout';
 
 export default function PerfilScreen() {
   const [usuario, setUsuario] = useState({
@@ -22,15 +23,16 @@ export default function PerfilScreen() {
       try {
         const response = await api.getUserById(id);
         const userData = response.data.user;
+        console.log("Carregar Usuario...:", userData);
 
         setUsuario({
-          nome: userData.nome || '',
-          email: userData.email || '',
-          cpf: userData.cpf || '',
+          nome: userData.nome,
+          email: userData.email,
+          cpf: userData.cpf,
           senha: '******', // senha oculta
         });
       } catch (error) {
-        console.error('Erro ao buscar usuário:', error);
+        console.log('Erro ao buscar usuário:', error.response.data.error);
       }
     }
 
@@ -70,6 +72,28 @@ export default function PerfilScreen() {
       ]
     );
   };
+  const UpdateUser = async () => {
+    const id = await SecureStore.getItemAsync('id_usuario');
+    if (!id) return;
+  
+    try {
+      const payload = {
+        nome: usuario.nome,
+        email: usuario.email,
+        cpf: usuario.cpf,
+        senha: usuario.senha !== '******' ? usuario.senha : undefined,
+      };
+  
+      const response = await api.updateUser(id, payload);
+      Alert.alert('Sucesso', 'Dados atualizados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error.response?.data || error.message);
+      Alert.alert('Erro', 'Não foi possível atualizar os dados.');
+    }
+  };
+  
+
+  
 
   return (
     <View style={styles.container}>
@@ -79,27 +103,35 @@ export default function PerfilScreen() {
         style={styles.input}
         placeholder="Nome"
         value={usuario.nome}
-        editable={false}
+        //editable={false}
+        onChangeText={(text) => setUsuario({ ...usuario, nome: text })}
       />
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={usuario.email}
-        editable={false}
+       // editable={false}
+       onChangeText={(text) => setUsuario({ ...usuario, email: text })}
       />
       <TextInput
         style={styles.input}
         placeholder="CPF"
         value={usuario.cpf}
-        editable={false}
+        //editable={false}
+        onChangeText={(text) => setUsuario({ ...usuario, cpf: text })}
       />
       <TextInput
         style={styles.input}
         placeholder="Senha"
         value={usuario.senha}
         secureTextEntry
-        editable={false}
+        //editable={false}
+        onChangeText={(text) => setUsuario({ ...usuario, senha: text })}
       />
+      <TouchableOpacity style={styles.button} onPress={UpdateUser}>
+  <Text style={styles.buttonText}>Salvar Alterações</Text>
+</TouchableOpacity>
+
 
       <TouchableOpacity
         style={styles.button}
@@ -109,7 +141,7 @@ export default function PerfilScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#8c0000' }]}
+        style={[styles.button, ]}
         onPress={handleDeleteAccount}
       >
         <Text style={styles.buttonText}>Excluir Conta</Text>

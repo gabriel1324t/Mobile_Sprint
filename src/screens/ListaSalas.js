@@ -74,12 +74,17 @@ export default function ListaSalas({ route }) {
 
       abrirModalComDescricao(salaSelecionada);
     } catch (error) {
-      console.log(
-        "Erro ao criar reserva",
-        error?.response?.data?.error || error
-      );
-      Alert.alert("Erro", error?.response?.data?.error || "Erro desconhecido.");
+      const errMsg = error.response?.data?.error || error.message;
+    
+      if (errMsg.includes("bloqueado")) {
+        Alert.alert("Acesso negado", "Você está bloqueado e não pode fazer reservas.");
+      } else {
+        Alert.alert("Erro", errMsg);
+      }
+    
+      console.log("Erro ao criar reserva:", errMsg);
     }
+    
   }
 
   useEffect(() => {

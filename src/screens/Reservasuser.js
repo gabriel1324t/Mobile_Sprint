@@ -11,32 +11,19 @@ import {
 
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
-import api from "../axios/axios"; // ajuste o caminho se necessário
+import api from "../axios/axios";
 
 export default function MinhasReservas() {
   const navigation = useNavigation();
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [idUsuario, setIdUsuario] = useState(null);
-
-  // useEffect(() => {
-  //   async function buscarIdUsuario() {
-  //     const id = await AsyncStorage.getItem('id_usuario');
-  //     if (!id) {
-  //       Alert.alert('Erro', 'Usuário não identificado. Faça login novamente.');
-  //       navigation.navigate('Login');
-  //       return;
-  //     }
-  //     setIdUsuario(id);
-  //   }
-
-  //   buscarIdUsuario();
-  // }, []);
+  const [exclusaoSucesso, setExclusaoSucesso] = useState(false);
 
   useEffect(() => {
     buscarIdUsuario();
     if (idUsuario) {
-      carregarReservas;
+      carregarReservas();
     }
   }, [idUsuario]);
 
@@ -52,14 +39,11 @@ export default function MinhasReservas() {
     setIdUsuario(id);
   }
 
-  //----------------------------PARAMOS AQUI---------------- 04/06
-
-  // const carregarReservas = async () => {
-  // setLoading(true);
   async function carregarReservas() {
     try {
-      const response = await api.getReservasPorUsuario(idUsuario);
+      const response = await api.getReservaPorUsuario(idUsuario);
       setReservas(response.data.reservas);
+      console.log("Sucesso...", response.data);
     } catch (error) {
       console.log("Erro ao buscar reservas:", error.response.data.error);
     } finally {

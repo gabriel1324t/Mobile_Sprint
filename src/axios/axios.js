@@ -27,7 +27,9 @@ const sheets = {
     getAllReservasPorSala: (id_sala) => api.get(`/reservas/${id_sala}`),
     getReservaPorUsuario: (id_usuario) => api.get(`reservas/usuario/${id_usuario}`), //reserva por id
     getUserById: (id_usuario) => api.get (`usuario/${id_usuario}`),
-    deleteUser: (id_usuario) => api.delete(`/usuario/${id_usuario}`)
+    deleteUser: (id_usuario) => api.delete(`/usuario/${id_usuario}`),
+    deleteReserva: (id_reserva) =>api.delete(`/reserva/${id_reserva}`),
+    updateUser: (id_usuario, usuario) => api.put(`/usuario/${id_usuario}`, usuario)
 }
 
 export default sheets;
