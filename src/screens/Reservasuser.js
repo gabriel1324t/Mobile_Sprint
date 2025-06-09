@@ -7,11 +7,13 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  Image
 } from "react-native";
 
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
 import api from "../axios/axios";
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function MinhasReservas() {
   const navigation = useNavigation();
@@ -38,6 +40,11 @@ export default function MinhasReservas() {
     }
     setIdUsuario(id);
   }
+  const handleLogout = async () => {
+    await SecureStore.deleteItemAsync('authenticated');
+    await SecureStore.deleteItemAsync('id_usuario');
+    navigation.navigate('Login');
+  };
 
   async function carregarReservas() {
     try {
@@ -90,7 +97,11 @@ export default function MinhasReservas() {
   };
 
   return (
+    
     <View style={styles.container}>
+      <TouchableOpacity style={styles.logoutIcon} onPress={handleLogout}>
+        <MaterialIcons name="logout" size={28} color="#b20000" />
+      </TouchableOpacity>
       <Text style={styles.titulo}>Minhas Reservas</Text>
 
       {loading ? (
@@ -118,6 +129,7 @@ export default function MinhasReservas() {
         <Text style={styles.semReserva}>Nenhuma reserva encontrada.</Text>
       )}
     </View>
+   
   );
 }
 
@@ -147,6 +159,12 @@ const styles = StyleSheet.create({
   data: {
     color: "#555",
     marginVertical: 4,
+  },
+  logoutIcon: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
   },
   botaoExcluir: {
     marginTop: 8,
