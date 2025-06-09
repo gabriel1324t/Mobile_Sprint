@@ -133,15 +133,17 @@ export default function PerfilScreen() {
         style={styles.input}
         placeholder="CPF"
         value={usuario.cpf}
-        editable={false}
+        //editable={false}
+        onChangeText={(text) => setUsuario({ ...usuario, cpf: text })}
       />
-      <TextInput
+       <TextInput
         style={styles.input}
         placeholder="Senha"
         value={usuario.senha}
-        secureTextEntry
+        //editable={false}
         onChangeText={(text) => setUsuario({ ...usuario, senha: text })}
       />
+   
 
       <TouchableOpacity style={styles.button} onPress={UpdateUser}>
         <Text style={styles.buttonText}>Salvar Alterações</Text>
