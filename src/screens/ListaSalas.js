@@ -16,6 +16,7 @@ import Layout from "../components/layout";
 import api from "../axios/axios";
 import DateTimePicker from "../components/DateTimePicker";
 import * as SecureStore from "expo-secure-store";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function ListaSalas({ route }) {
   const { user } = route.params;
@@ -75,16 +76,18 @@ export default function ListaSalas({ route }) {
       abrirModalComDescricao(salaSelecionada);
     } catch (error) {
       const errMsg = error.response?.data?.error || error.message;
-    
+
       if (errMsg.includes("bloqueado")) {
-        Alert.alert("Acesso negado", "Você está bloqueado e não pode fazer reservas.");
+        Alert.alert(
+          "Acesso negado",
+          "Você está bloqueado e não pode fazer reservas."
+        );
       } else {
         Alert.alert("Erro", errMsg);
       }
-    
+
       console.log("Erro ao criar reserva:", errMsg);
     }
-    
   }
 
   useEffect(() => {
@@ -297,6 +300,12 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     backgroundColor: "#fff",
     alignItems: "center",
+  },
+  logoutIcon: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 1,
   },
   input: {
     borderWidth: 1,

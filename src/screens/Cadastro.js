@@ -17,7 +17,7 @@ export default function Cadastro({ navigation }) {
     email: "",
     cpf: "",
     senha: "",
-    showPassword: false,
+    showPassword: true,
   });
 
   async function handleCadastro() {
