@@ -7,7 +7,6 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  Image,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
@@ -19,11 +18,16 @@ export default function MinhasReservas() {
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [idUsuario, setIdUsuario] = useState(null);
+  const [totalReservas, setTotalReservas] = useState(1);
 
   useEffect(() => {
     buscarIdUsuario();
+  }, []);
+
+  useEffect(() => {
     if (idUsuario) {
       carregarReservas();
+      carregarTotalReservas();
     }
   }, [idUsuario]);
 
@@ -38,11 +42,6 @@ export default function MinhasReservas() {
     }
     setIdUsuario(id);
   }
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync("authenticated");
-    await SecureStore.deleteItemAsync("id_usuario");
-    navigation.navigate("Login");
-  };
 
   async function carregarReservas() {
     try {
@@ -53,6 +52,16 @@ export default function MinhasReservas() {
       console.log("Erro ao buscar reservas:", error.response.data.error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function carregarTotalReservas() {
+    try {
+      const response = await api.getTotalReserva(idUsuario);
+      setTotalReservas(response.data.totalReservas);
+      console.log("Total de reservas:", response.data.totalReservas);
+    } catch (error) {
+      console.error("Erro ao buscar total de reservas:", error);
     }
   }
 
@@ -73,6 +82,7 @@ export default function MinhasReservas() {
               setReservas((prev) =>
                 prev.filter((reserva) => reserva.id_reserva !== idReserva)
               );
+              setTotalReservas((prev) => prev - 1); // Atualiza o total
               Alert.alert("Sucesso", "Reserva excluída com sucesso!");
             } catch (error) {
               console.log("Erro ao excluir reserva:", error);
@@ -94,12 +104,20 @@ export default function MinhasReservas() {
     return `${dataFormatada} - ${horaInicioFormatada} até ${horaFimFormatada}`;
   };
 
+  const handleLogout = async () => {
+    await SecureStore.deleteItemAsync("authenticated");
+    await SecureStore.deleteItemAsync("id_usuario");
+    navigation.navigate("Login");
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.logoutIcon} onPress={handleLogout}>
         <MaterialIcons name="logout" size={28} color="#b20000" />
       </TouchableOpacity>
       <Text style={styles.titulo}>Minhas Reservas</Text>
+
+      <Text style={styles.total}>Total de reservas feitas: {totalReservas}</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#b71c1c" />
@@ -125,6 +143,12 @@ export default function MinhasReservas() {
       ) : (
         <Text style={styles.semReserva}>Nenhuma reserva encontrada.</Text>
       )}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("Login")}
+      >
+        <Text style={styles.buttonText}>Voltar ao inicio</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -139,8 +163,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#b71c1c",
-    marginBottom: 16,
+    marginBottom: 8,
     textAlign: "center",
+  },
+  total: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 16,
+    color: "#333",
   },
   card: {
     backgroundColor: "#f2f2f2",
@@ -178,4 +208,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 20,
   },
+  button: {
+    backgroundColor: "#b20000",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+  }
 });
